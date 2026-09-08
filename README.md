@@ -7,6 +7,8 @@ including the monitor's KVM behavior. The app downloads and manages that binary
 inside Application Support; it does not require Homebrew, BetterDisplay,
 `ddcctl`, a shell PATH entry, or Accessibility automation.
 
+![ProArt KVM switcher](docs/images/codex-clipboard-32ec0c4a-62b6-4754-98ee-bb8e7576efea.png)
+
 This repository is owned by Chase Seibert. Git is used for local versioning and
 rollback; it is not assumed to be published or deployed remotely.
 
