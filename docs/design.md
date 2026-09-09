@@ -26,7 +26,8 @@ and connection status. A separate Settings window, opened with Command-Comma
 or from either menu, provides download/update controls, the managed binary
 path, monitor ID/model/serial/device ID, input visibility switches, per-input
 names and SF Symbol/emoji choices, the CLI input IDs, direct test buttons, and
-the connection role. The app uses
+the connection role. It also includes a Start ProArt KVM at login control backed
+by macOS Login Items. The app uses
 system colors, controls, spacing, and SF Symbols so it follows light/dark
 appearance without custom chrome.
 

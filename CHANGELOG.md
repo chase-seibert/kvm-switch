@@ -9,6 +9,8 @@
 - Added per-input friendly names and SF Symbol/emoji icon choices in Settings;
   custom presentation is reflected in the switcher and menu-bar commands while
   ASUS CLI source IDs remain unchanged.
+- Added a Settings toggle for starting ProArt KVM at login using macOS's native
+  `SMAppService` login-item registration and approval status.
 - Made the main switcher and Settings windows resizable, with a compact 560×390
   switcher starting size to remove unused vertical space.
 - Reduced the enforced minimums so the switcher can reach 500×360 content points

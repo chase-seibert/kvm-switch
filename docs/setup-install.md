@@ -21,6 +21,6 @@ After setup, open Settings with Command-Comma, from the ProArt KVM application
 menu, or from the status-item menu. Use the Show switches under Input options
 to hide unused sources; for example, turning off HDMI 1 removes it from the
 switcher, toggle destination, and menus. At least one source remains enabled.
-
-The app's launch-at-login behavior is intentionally not included in the first
-implementation. Add it later with `SMAppService` after switching is stable.
+Use the App section's Start ProArt KVM at login switch to register the app as a
+macOS login item. If macOS reports that approval is required, enable ProArt KVM
+under System Settings > General > Login Items.

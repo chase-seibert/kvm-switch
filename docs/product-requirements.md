@@ -26,3 +26,5 @@
   switcher and menus show only the controls I use.
 - As a Mac user, I want hardware settings in a dedicated Settings window opened
   with Command-Comma, rather than mixed into the switching view.
+- As a Mac user, I want an optional Start at Login setting, so ProArt KVM is
+  available automatically after I sign in.

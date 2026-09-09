@@ -10,6 +10,8 @@
   Thunderbolt, DisplayPort, and HDMI options.
 - `Preferences` persists onboarding completion, the Mac's connection role,
   enabled inputs, per-input names/icons, and display text scale in `UserDefaults`.
+- `LoginItemManager` registers or unregisters the main app with Apple's
+  `SMAppService` and reads the system status back for the Settings toggle.
 - `MenuBarController` owns the `NSStatusItem`, menu commands, asynchronous
   switching, status/error notifications, and initial synchronization read.
 - `HotKeyController` registers Control-Option-Command-K with Carbon's native

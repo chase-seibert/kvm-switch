@@ -1,4 +1,5 @@
 import AppKit
+import ServiceManagement
 import SwiftUI
 
 extension Notification.Name {
@@ -62,6 +63,44 @@ struct InputCustomization: Codable, Equatable {
 
     static func `default`(for input: PA32QCVInput) -> InputCustomization {
         InputCustomization(name: input.shortTitle, icon: input.defaultIconChoice.rawValue)
+    }
+}
+
+final class LoginItemManager: ObservableObject {
+    @Published private(set) var isEnabled = false
+    @Published private(set) var requiresApproval = false
+    @Published private(set) var errorMessage: String?
+
+    init() {
+        refresh()
+    }
+
+    var statusDescription: String {
+        if requiresApproval {
+            return "Approval required in System Settings › General › Login Items."
+        }
+        return isEnabled ? "ProArt KVM will open when you log in." : "ProArt KVM will not open automatically."
+    }
+
+    func refresh() {
+        let status = SMAppService.mainApp.status
+        isEnabled = status == .enabled || status == .requiresApproval
+        requiresApproval = status == .requiresApproval
+    }
+
+    func setEnabled(_ enabled: Bool) {
+        errorMessage = nil
+        do {
+            if enabled {
+                try SMAppService.mainApp.register()
+            } else {
+                try SMAppService.mainApp.unregister()
+            }
+            refresh()
+        } catch {
+            refresh()
+            errorMessage = "Could not update the login item: \(error.localizedDescription)"
+        }
     }
 }
 

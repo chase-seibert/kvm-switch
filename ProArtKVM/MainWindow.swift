@@ -35,6 +35,7 @@ final class MainWindowController {
     private let minimumSettingsContentSize = NSSize(width: 560, height: 440)
     private let model = MainWindowModel()
     private let preferences: Preferences
+    private let loginItem: LoginItemManager
     private let switchAction: (PA32QCVInput) -> Void
     private let refreshAction: () -> Void
     private let installAction: () -> Void
@@ -44,12 +45,14 @@ final class MainWindowController {
 
     init(
         preferences: Preferences = .shared,
+        loginItem: LoginItemManager = LoginItemManager(),
         switchAction: @escaping (PA32QCVInput) -> Void,
         refreshAction: @escaping () -> Void,
         installAction: @escaping () -> Void,
         finishSetupAction: @escaping () -> Void
     ) {
         self.preferences = preferences
+        self.loginItem = loginItem
         self.switchAction = switchAction
         self.refreshAction = refreshAction
         self.installAction = installAction
@@ -99,6 +102,7 @@ final class MainWindowController {
             let view = HardwareSettingsView(
                 model: model,
                 preferences: preferences,
+                loginItem: loginItem,
                 refreshAction: { [weak self] in self?.refreshAction() },
                 installAction: { [weak self] in self?.installAction() },
                 switchAction: { [weak self] input in self?.switchTo(input) }
@@ -438,6 +442,7 @@ private struct InputIconView: View {
 private struct HardwareSettingsView: View {
     @ObservedObject var model: MainWindowModel
     @ObservedObject var preferences: Preferences
+    @ObservedObject var loginItem: LoginItemManager
     let refreshAction: () -> Void
     let installAction: () -> Void
     let switchAction: (PA32QCVInput) -> Void
@@ -455,6 +460,26 @@ private struct HardwareSettingsView: View {
                     Spacer()
                     Button("Refresh", action: refreshAction)
                         .buttonStyle(.bordered)
+                }
+
+                GroupBox("App") {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Toggle("Start ProArt KVM at login", isOn: Binding(
+                            get: { loginItem.isEnabled },
+                            set: { loginItem.setEnabled($0) }
+                        ))
+                        Text(loginItem.statusDescription)
+                            .font(.callout)
+                            .foregroundStyle(loginItem.requiresApproval ? .orange : .secondary)
+                        if let errorMessage = loginItem.errorMessage {
+                            Text(errorMessage)
+                                .font(.callout)
+                                .foregroundStyle(.red)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 4)
                 }
 
                 GroupBox("ASUS Display Control") {

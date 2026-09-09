@@ -3,6 +3,7 @@ import UserNotifications
 
 final class MenuBarController: NSObject {
     private let preferences = Preferences.shared
+    private let loginItem = LoginItemManager()
     private let cli = ASUSCLIManager.shared
     private let monitor = PA32QCVController()
     private var mainWindow: MainWindowController!
@@ -23,6 +24,7 @@ final class MenuBarController: NSObject {
 
         mainWindow = MainWindowController(
             preferences: preferences,
+            loginItem: loginItem,
             switchAction: { [weak self] input in self?.performSwitch(to: input) },
             refreshAction: { [weak self] in self?.synchronize() },
             installAction: { [weak self] in self?.installCLI() },
