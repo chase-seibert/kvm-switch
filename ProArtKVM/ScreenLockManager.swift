@@ -46,20 +46,21 @@ final class ScreenLockManager {
         return NSWorkspace.shared.open(url)
     }
 
-    func lock() throws {
+    func lock(using shortcut: ScreenLockShortcut = .controlCommandQ) throws {
         if let helperURL = helperURLs.first(where: { FileManager.default.isExecutableFile(atPath: $0.path) }) {
             try run(helperAt: helperURL)
             return
         }
 
         // Newer macOS versions no longer ship CGSession. The Apple menu's
-        // Lock Screen action is also available as Control-Command-Q.
+        // Newer macOS versions expose the Lock Screen action as a keyboard
+        // shortcut. The shortcut is configurable because it can differ by Mac.
         guard CGPreflightPostEventAccess() else {
             throw ScreenLockError.accessibilityRequired
         }
         guard let source = CGEventSource(stateID: .combinedSessionState),
-              let keyDown = CGEvent(keyboardEventSource: source, virtualKey: 12, keyDown: true),
-              let keyUp = CGEvent(keyboardEventSource: source, virtualKey: 12, keyDown: false) else {
+              let keyDown = CGEvent(keyboardEventSource: source, virtualKey: shortcut.virtualKey, keyDown: true),
+              let keyUp = CGEvent(keyboardEventSource: source, virtualKey: shortcut.virtualKey, keyDown: false) else {
             throw ScreenLockError.unavailable
         }
 

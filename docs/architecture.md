@@ -7,17 +7,20 @@
   it with argument arrays, and parses monitor discovery and input values.
 - `PA32QCVController` is the narrow monitor-specific facade. It selects only a
   discovered PA32QCV and maps the documented `InputSource` IDs to friendly
-  Thunderbolt, DisplayPort, and HDMI options. It also exposes experimental
-  raw VCP power commands for Settings-only hardware validation.
+  Thunderbolt, DisplayPort, and HDMI options.
 - `Preferences` persists onboarding completion, the Mac's connection role,
-  enabled inputs, per-input names/icons, display text scale, and the optional
-  post-switch screen lock in `UserDefaults`.
+  enabled inputs, per-input names/icons, display text scale, the optional
+  post-switch screen lock, and its per-Mac fallback shortcut in `UserDefaults`.
 - `LoginItemManager` registers or unregisters the main app with Apple's
   `SMAppService` and reads the system status back for the Settings toggle.
 - `ScreenLockManager` invokes the system helper used by Apple's Lock Screen
-  menu action, falling back to its Control-Command-Q shortcut on newer macOS
-  versions, when the opt-in post-switch setting is enabled. It also exposes
-  Accessibility permission request/settings actions for Settings diagnostics.
+  menu action, falling back to the user's configured Control-Command-Q or
+  Control-Command-L shortcut on newer macOS versions, when the opt-in
+  post-switch setting is enabled. It also exposes Accessibility permission
+  request/settings actions for Settings diagnostics.
+- `MainWindowController` owns one SwiftUI-hosted window containing the switcher
+  and a collapsible settings section; it resizes the window when that section
+  is toggled. Command-W closes the window without terminating the menu-bar app.
 - `MenuBarController` owns the `NSStatusItem`, menu commands, asynchronous
   switching, status/error notifications, and initial synchronization read.
 - `HotKeyController` registers Control-Option-Command-K with Carbon's native
@@ -33,7 +36,6 @@ managed ASUS `dwc` download
 menu, window, or global hotkey
         ↓
 PA32QCVController → `dwc list` / `get InputSource` / `set InputSource`
-                  → experimental `setvcp 0xD6` power commands
                   → optional macOS Lock Screen action
         ↓
 monitor input and PA32QCV KVM upstream selection
@@ -53,9 +55,6 @@ Both Macs run their own copy of the app and their own local preferences.
   in Settings so discovery is inspectable rather than opaque.
 - The app uses ASUS's documented PA32QCV IDs: Thunderbolt `21`, DisplayPort
   `15`, and HDMI `17`.
-- Settings exposes experimental PA32QCV VCP `0xD6` power buttons using `0x01`
-  for on and `0x04` for off/standby. These controls are intentionally not in
-  the main UI until the hardware behavior is validated.
 - The old `DDCController` and `DisplayDiscovery` sources remain only as
   historical reference; they are no longer part of the app target. The
   standalone `Tools/ddc-probe.swift` remains the diagnostic implementation.

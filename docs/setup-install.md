@@ -2,7 +2,10 @@
 
 1. Connect the PA32QCV and verify that its OSD KVM/upstream configuration is
    correct for the two Macs.
-2. Build and install with `make install-local`.
+2. Build and install with `make install-local`. The Makefile signs the app with
+   the first available local code-signing identity so Accessibility permission
+   remains associated with the app across rebuilds. If needed, select one with
+   `SIGNING_IDENTITY="..." make install-local`.
 3. Launch the app. Onboarding downloads the official ASUS Display Control CLI
    from the ASUS-maintained GitHub repository into the app's Application
    Support directory.
@@ -15,7 +18,9 @@
 7. Select This Mac's connection role. The global toggle is
    Control-Option-Command-K; direct buttons and menu commands remain available.
 8. Repeat setup independently on the second Mac. No Accessibility automation
-   permission is required for the CLI-based switching path.
+   permission is required for the CLI-based switching path; it is only needed
+   for the optional post-switch Lock Screen action. Use a stable signing
+   identity on that Mac as well.
 
 After setup, open Settings with Command-Comma, from the ProArt KVM application
 menu, or from the status-item menu. Use the Show switches under Input options

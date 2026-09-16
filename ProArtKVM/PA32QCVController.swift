@@ -72,25 +72,6 @@ enum MonitorError: LocalizedError {
     }
 }
 
-enum PA32QCVPowerState: Sendable {
-    case on
-    case off
-
-    var vcpValue: UInt16 {
-        switch self {
-        case .on: return 0x01
-        case .off: return 0x04
-        }
-    }
-
-    var title: String {
-        switch self {
-        case .on: return "power on"
-        case .off: return "power off / standby"
-        }
-    }
-}
-
 final class PA32QCVController {
     private let cli: ASUSCLIManager
 
@@ -120,13 +101,4 @@ final class PA32QCVController {
         try cli.setInputValue(input.cliValue, for: target)
     }
 
-    func setPowerState(_ state: PA32QCVPowerState, monitor: ASUSMonitor? = nil) throws {
-        let target: ASUSMonitor
-        if let monitor {
-            target = monitor
-        } else {
-            target = try findPA32QCV()
-        }
-        try cli.setVCPValue(state.vcpValue, code: 0xD6, for: target)
-    }
 }

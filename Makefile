@@ -6,8 +6,9 @@ APP_NAME := ProArtKVM
 APP_PATH := $(DERIVED_DATA)/Build/Products/$(CONFIGURATION)/ProArt KVM.app
 INSTALLED_APP_PATH := $(DERIVED_DATA)/Applications/ProArt KVM.app
 PROBE_PATH := $(DERIVED_DATA)/ddc-probe
+SIGNING_IDENTITY ?= $(shell security find-identity -v -p codesigning 2>/dev/null | awk -F '"' 'NR == 1 {print $$2}')
 
-.PHONY: setup build probe-build probe run probe-run format lint test install-local clean
+.PHONY: setup build sign-app probe-build probe run probe-run format lint test install-local clean
 
 setup:
 	@sw_vers
@@ -16,6 +17,12 @@ setup:
 
 build:
 	xcodebuild -project $(PROJECT) -scheme $(SCHEME) -configuration $(CONFIGURATION) -derivedDataPath $(DERIVED_DATA) CODE_SIGNING_ALLOWED=NO build
+	$(MAKE) sign-app
+
+sign-app:
+	@if [ -z "$(SIGNING_IDENTITY)" ]; then echo "No code-signing identity found. Install an Apple Development certificate or pass SIGNING_IDENTITY=..." >&2; exit 1; fi
+	codesign --force --deep --sign "$(SIGNING_IDENTITY)" "$(APP_PATH)"
+	codesign --verify --deep --strict "$(APP_PATH)"
 
 probe-build:
 	mkdir -p $(DERIVED_DATA)
@@ -34,6 +41,7 @@ format:
 
 lint:
 	xcodebuild -project $(PROJECT) -scheme $(SCHEME) -configuration $(CONFIGURATION) -derivedDataPath $(DERIVED_DATA) CODE_SIGNING_ALLOWED=NO SWIFT_TREAT_WARNINGS_AS_ERRORS=YES build
+	$(MAKE) sign-app
 
 test: build probe-build
 	@test -d "$(APP_PATH)"

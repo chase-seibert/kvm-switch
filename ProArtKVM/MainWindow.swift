@@ -24,23 +24,21 @@ final class MainWindowModel: ObservableObject {
     @Published var hardware = HardwareSnapshot.empty
     @Published var isBusy = false
     @Published var isInstalling = false
+    @Published var isShowingSettings = false
     @Published var installationMessage: String?
-    @Published var statusMessage: String?
     @Published var errorMessage: String?
     @Published var screenLockStatusMessage: String?
     @Published var screenLockErrorMessage: String?
 }
 
 final class MainWindowController {
-    private let windowContentSize = NSSize(width: 560, height: 390)
-    private let minimumWindowContentSize = NSSize(width: 500, height: 360)
-    private let settingsContentSize = NSSize(width: 620, height: 520)
-    private let minimumSettingsContentSize = NSSize(width: 560, height: 440)
+    private let windowContentSize = NSSize(width: 560, height: 460)
+    private let expandedWindowContentHeight: CGFloat = 920
+    private let minimumWindowContentSize = NSSize(width: 500, height: 440)
     private let model = MainWindowModel()
     private let preferences: Preferences
     private let loginItem: LoginItemManager
     private let switchAction: (PA32QCVInput) -> Void
-    private let powerAction: (PA32QCVPowerState) -> Void
     private let refreshAction: () -> Void
     private let installAction: () -> Void
     private let finishSetupAction: () -> Void
@@ -48,13 +46,11 @@ final class MainWindowController {
     private let openScreenLockSettingsAction: () -> Void
     private let testScreenLockAction: () -> Void
     private var windowController: NSWindowController?
-    private var settingsWindowController: NSWindowController?
 
     init(
         preferences: Preferences = .shared,
         loginItem: LoginItemManager = LoginItemManager(),
         switchAction: @escaping (PA32QCVInput) -> Void,
-        powerAction: @escaping (PA32QCVPowerState) -> Void,
         refreshAction: @escaping () -> Void,
         installAction: @escaping () -> Void,
         finishSetupAction: @escaping () -> Void,
@@ -65,7 +61,6 @@ final class MainWindowController {
         self.preferences = preferences
         self.loginItem = loginItem
         self.switchAction = switchAction
-        self.powerAction = powerAction
         self.refreshAction = refreshAction
         self.installAction = installAction
         self.finishSetupAction = finishSetupAction
@@ -79,10 +74,15 @@ final class MainWindowController {
             let view = AppRootView(
                 model: model,
                 preferences: preferences,
+                loginItem: loginItem,
                 switchAction: { [weak self] input in self?.switchTo(input) },
                 refreshAction: { [weak self] in self?.refreshAction() },
                 installAction: { [weak self] in self?.installAction() },
-                finishSetupAction: { [weak self] in self?.finishSetupAction() }
+                finishSetupAction: { [weak self] in self?.finishSetupAction() },
+                requestScreenLockPermissionAction: { [weak self] in self?.requestScreenLockPermissionAction() },
+                openScreenLockSettingsAction: { [weak self] in self?.openScreenLockSettingsAction() },
+                testScreenLockAction: { [weak self] in self?.testScreenLockAction() },
+                toggleSettingsAction: { [weak self] in self?.toggleSettings() }
             )
             let hostingController = NSHostingController(
                 rootView: view.frame(minWidth: minimumWindowContentSize.width, minHeight: minimumWindowContentSize.height, alignment: .topLeading)
@@ -113,43 +113,25 @@ final class MainWindowController {
     }
 
     func showSettings() {
-        if settingsWindowController == nil {
-            let view = HardwareSettingsView(
-                model: model,
-                preferences: preferences,
-                loginItem: loginItem,
-                refreshAction: { [weak self] in self?.refreshAction() },
-                installAction: { [weak self] in self?.installAction() },
-                switchAction: { [weak self] input in self?.switchTo(input) },
-                powerAction: { [weak self] state in self?.powerTo(state) },
-                requestScreenLockPermissionAction: { [weak self] in self?.requestScreenLockPermissionAction() },
-                openScreenLockSettingsAction: { [weak self] in self?.openScreenLockSettingsAction() },
-                testScreenLockAction: { [weak self] in self?.testScreenLockAction() }
-            )
-            let hostingController = NSHostingController(
-                rootView: view.frame(minWidth: minimumSettingsContentSize.width, minHeight: minimumSettingsContentSize.height, alignment: .topLeading)
-            )
-            let newWindow = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: settingsContentSize.width, height: settingsContentSize.height),
-                styleMask: [.titled, .closable, .miniaturizable, .resizable],
-                backing: .buffered,
-                defer: false
-            )
-            newWindow.contentViewController = hostingController
-            newWindow.title = "ProArt KVM Settings"
-            newWindow.setContentSize(settingsContentSize)
-            newWindow.collectionBehavior = [.moveToActiveSpace, .fullScreenAuxiliary]
-            newWindow.isReleasedWhenClosed = false
-            newWindow.isRestorable = false
-            let targetFrameSize = newWindow.frameRect(forContentRect: NSRect(origin: .zero, size: minimumSettingsContentSize)).size
-            newWindow.minSize = targetFrameSize
-            newWindow.center()
-            settingsWindowController = NSWindowController(window: newWindow)
+        let wasShowingSettings = model.isShowingSettings
+        model.isShowingSettings = true
+        show()
+        if !wasShowingSettings {
+            resizeWindowForSettings()
         }
+    }
 
-        settingsWindowController?.showWindow(nil)
-        settingsWindowController?.window?.orderFrontRegardless()
-        NSApp.activate(ignoringOtherApps: true)
+    func toggleSettings() {
+        model.isShowingSettings.toggle()
+        show()
+        resizeWindowForSettings()
+    }
+
+    private func resizeWindowForSettings() {
+        guard let window = windowController?.window else { return }
+        let width = max(window.contentView?.bounds.width ?? windowContentSize.width, windowContentSize.width)
+        let height = model.isShowingSettings ? expandedWindowContentHeight : windowContentSize.height
+        window.setContentSize(NSSize(width: width, height: height))
     }
 
     func update(
@@ -189,10 +171,6 @@ final class MainWindowController {
         DispatchQueue.main.async { [weak self] in self?.model.errorMessage = message }
     }
 
-    func setStatus(_ message: String?) {
-        DispatchQueue.main.async { [weak self] in self?.model.statusMessage = message }
-    }
-
     func setScreenLockStatus(_ message: String?) {
         DispatchQueue.main.async { [weak self] in self?.model.screenLockStatusMessage = message }
     }
@@ -203,28 +181,25 @@ final class MainWindowController {
 
     private func switchTo(_ input: PA32QCVInput) {
         model.errorMessage = nil
-        model.statusMessage = nil
         model.screenLockStatusMessage = nil
         model.screenLockErrorMessage = nil
         model.isBusy = true
         switchAction(input)
-    }
-
-    private func powerTo(_ state: PA32QCVPowerState) {
-        model.errorMessage = nil
-        model.statusMessage = nil
-        model.isBusy = true
-        powerAction(state)
     }
 }
 
 private struct AppRootView: View {
     @ObservedObject var model: MainWindowModel
     @ObservedObject var preferences: Preferences
+    @ObservedObject var loginItem: LoginItemManager
     let switchAction: (PA32QCVInput) -> Void
     let refreshAction: () -> Void
     let installAction: () -> Void
     let finishSetupAction: () -> Void
+    let requestScreenLockPermissionAction: () -> Void
+    let openScreenLockSettingsAction: () -> Void
+    let testScreenLockAction: () -> Void
+    let toggleSettingsAction: () -> Void
 
     var body: some View {
         Group {
@@ -232,7 +207,15 @@ private struct AppRootView: View {
                 AppWindowView(
                     model: model,
                     preferences: preferences,
-                    switchAction: switchAction
+                    loginItem: loginItem,
+                    switchAction: switchAction,
+                    refreshAction: refreshAction,
+                    installAction: installAction,
+                    requestScreenLockPermissionAction: requestScreenLockPermissionAction,
+                    openScreenLockSettingsAction: openScreenLockSettingsAction,
+                    testScreenLockAction: testScreenLockAction,
+                    isShowingSettings: model.isShowingSettings,
+                    toggleSettingsAction: toggleSettingsAction
                 )
             } else {
                 OnboardingView(
@@ -343,10 +326,44 @@ private struct OnboardingView: View {
 private struct AppWindowView: View {
     @ObservedObject var model: MainWindowModel
     @ObservedObject var preferences: Preferences
+    @ObservedObject var loginItem: LoginItemManager
     let switchAction: (PA32QCVInput) -> Void
+    let refreshAction: () -> Void
+    let installAction: () -> Void
+    let requestScreenLockPermissionAction: () -> Void
+    let openScreenLockSettingsAction: () -> Void
+    let testScreenLockAction: () -> Void
+    let isShowingSettings: Bool
+    let toggleSettingsAction: () -> Void
 
     var body: some View {
-        SwitcherView(model: model, preferences: preferences, switchAction: switchAction)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                SwitcherView(
+                    model: model,
+                    preferences: preferences,
+                    switchAction: switchAction,
+                    isShowingSettings: isShowingSettings,
+                    toggleSettingsAction: toggleSettingsAction
+                )
+                if isShowingSettings {
+                    Divider()
+                        .padding(.horizontal, 28)
+                    HardwareSettingsView(
+                        model: model,
+                        preferences: preferences,
+                        loginItem: loginItem,
+                        refreshAction: refreshAction,
+                        installAction: installAction,
+                        switchAction: switchAction,
+                        requestScreenLockPermissionAction: requestScreenLockPermissionAction,
+                        openScreenLockSettingsAction: openScreenLockSettingsAction,
+                        testScreenLockAction: testScreenLockAction,
+                        scrollable: false
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -354,6 +371,8 @@ private struct SwitcherView: View {
     @ObservedObject var model: MainWindowModel
     @ObservedObject var preferences: Preferences
     let switchAction: (PA32QCVInput) -> Void
+    let isShowingSettings: Bool
+    let toggleSettingsAction: () -> Void
 
     private var toggleInput: PA32QCVInput? {
         guard let role = preferences.role else { return nil }
@@ -380,8 +399,10 @@ private struct SwitcherView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             VStack(alignment: .leading, spacing: 6) {
-                Text("Switch the PA32QCV input")
-                    .font(.system(size: 25 * preferences.fontScale, weight: .semibold))
+                HStack(alignment: .firstTextBaseline) {
+                    Text("Switch the PA32QCV input")
+                        .font(.system(size: 25 * preferences.fontScale, weight: .semibold))
+                }
                 Text("The ASUS CLI changes the monitor input. The PA32QCV then follows its configured KVM upstream mapping for keyboard and mouse.")
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -417,15 +438,22 @@ private struct SwitcherView: View {
                     switchAction(toggleInput)
                 } label: {
                     Label("Toggle to \(preferences.displayName(for: toggleInput))  ⌃⌥⌘K", systemImage: "arrow.left.arrow.right")
-                        .frame(maxWidth: .infinity)
+                        .frame(maxWidth: .infinity, minHeight: 56)
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.borderedProminent)
+                .tint(.accentColor)
                 .controlSize(.large)
                 .disabled(!model.hardware.isReady || model.isBusy)
             } else {
                 Text("Choose this Mac’s connection role in Settings and enable its destination input to use the toggle shortcut.")
                     .font(.callout)
                     .foregroundStyle(.secondary)
+            }
+
+            HStack {
+                Spacer()
+                Button(isShowingSettings ? "Hide Settings" : "Settings…", action: toggleSettingsAction)
+                    .buttonStyle(.bordered)
             }
 
             if let errorMessage = model.errorMessage {
@@ -487,14 +515,23 @@ private struct HardwareSettingsView: View {
     let refreshAction: () -> Void
     let installAction: () -> Void
     let switchAction: (PA32QCVInput) -> Void
-    let powerAction: (PA32QCVPowerState) -> Void
     let requestScreenLockPermissionAction: () -> Void
     let openScreenLockSettingsAction: () -> Void
     let testScreenLockAction: () -> Void
+    let scrollable: Bool
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
+        Group {
+            if scrollable {
+                ScrollView { settingsContent }
+            } else {
+                settingsContent
+            }
+        }
+    }
+
+    private var settingsContent: some View {
+        VStack(alignment: .leading, spacing: 18) {
                 HStack(alignment: .firstTextBaseline) {
                     VStack(alignment: .leading, spacing: 5) {
                         Text("Settings & hardware")
@@ -513,8 +550,19 @@ private struct HardwareSettingsView: View {
                             get: { loginItem.isEnabled },
                             set: { loginItem.setEnabled($0) }
                         ))
+                        Toggle("Start with window hidden (menu bar only)", isOn: $preferences.startMinimized)
+                        Text("When enabled, ProArt KVM starts without opening its window. Use Open App from the menu bar to show it.")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
                         Toggle("Lock the screen after switching inputs", isOn: $preferences.lockScreenAfterSwitch)
-                        Text("After a successful switch, ProArt KVM uses macOS's Lock Screen command (Control-Command-Q). Newer macOS versions may require Accessibility permission.")
+                        Picker("Fallback Lock Screen shortcut", selection: $preferences.screenLockShortcut) {
+                            ForEach(ScreenLockShortcut.allCases) { shortcut in
+                                Text(shortcut.title).tag(shortcut)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        Text("After a successful switch, ProArt KVM uses macOS's Lock Screen command. If the system helper is unavailable, it uses the selected shortcut. Newer macOS versions may require Accessibility permission.")
                             .font(.callout)
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -581,37 +629,6 @@ private struct HardwareSettingsView: View {
                                 .font(.callout)
                                 .foregroundStyle(.secondary)
                         }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.vertical, 4)
-                }
-
-                GroupBox("Experimental monitor power") {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Send raw VCP 0xD6 commands to the verified PA32QCV. Power off uses the monitor's standby value; it is not a hard power cut.")
-                            .font(.callout)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                        HStack(spacing: 10) {
-                            Button("Power off / standby") { powerAction(.off) }
-                            Button("Power on") { powerAction(.on) }
-                        }
-                        .disabled(!model.hardware.isReady || model.isBusy)
-                        if let statusMessage = model.statusMessage {
-                            Text(statusMessage)
-                                .font(.callout)
-                                .foregroundStyle(.secondary)
-                        }
-                        if let errorMessage = model.errorMessage {
-                            Text(errorMessage)
-                                .font(.callout)
-                                .foregroundStyle(.red)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                        Text("Experimental values: 0x01 = on, 0x04 = off. Test whether the monitor accepts the on command after standby.")
-                            .font(.callout)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.vertical, 4)
@@ -714,7 +731,6 @@ private struct HardwareSettingsView: View {
             }
             .padding(28)
         }
-    }
 }
 
 private struct HardwareRow: View {

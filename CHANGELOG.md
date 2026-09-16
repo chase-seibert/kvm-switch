@@ -1,11 +1,28 @@
 # Changelog
 
+## 2026-09-16
+
+- Updated the Makefile to sign and verify local app builds with a stable
+  code-signing identity, preserving macOS Accessibility authorization across
+  rebuilds.
+
 ## 2026-09-15
 
 - Added an opt-in Settings option to lock the Mac after a successful KVM input
   switch using macOS's native Lock Screen command.
 - Added nearby permission controls, localized screen-lock errors, and a
   Settings test button for verifying the Lock Screen action.
+- Combined the switcher and settings into one window with a collapsible,
+  auto-sized settings section.
+- Removed the experimental monitor power controls.
+- Added Command-W support for closing the window without quitting the menu-bar
+  app.
+- Moved the Settings button below the switcher controls, added an Open App
+  menu-bar command, and made the toggle action prominent and taller.
+- Added a per-Mac fallback Lock Screen shortcut choice for Control-Command-Q
+  and Control-Command-L.
+- Increased the compact window height so the relocated Settings button remains
+  visible, and added a menu-bar-only startup option.
 
 ## 2026-09-08
 

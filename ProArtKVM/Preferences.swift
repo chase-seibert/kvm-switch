@@ -15,6 +15,27 @@ enum ConnectionRole: String, CaseIterable, Identifiable {
     var otherInput: PA32QCVInput { self == .thunderbolt ? .displayPort : .thunderbolt }
 }
 
+enum ScreenLockShortcut: String, CaseIterable, Identifiable {
+    case controlCommandQ = "control-command-q"
+    case controlCommandL = "control-command-l"
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .controlCommandQ: return "Control-Command-Q"
+        case .controlCommandL: return "Control-Command-L"
+        }
+    }
+
+    var virtualKey: UInt16 {
+        switch self {
+        case .controlCommandQ: return 12
+        case .controlCommandL: return 37
+        }
+    }
+}
+
 enum InputIconChoice: String, CaseIterable, Identifiable, Codable {
     case bolt = "sf:bolt.horizontal.circle"
     case display = "sf:display"
@@ -113,6 +134,8 @@ final class Preferences: ObservableObject {
     @Published var inputCustomizations: [String: InputCustomization] { didSet { saveInputCustomizations(); notifyChange() } }
     @Published var fontScale: Double { didSet { defaults.set(fontScale, forKey: Keys.fontScale); notifyChange() } }
     @Published var lockScreenAfterSwitch: Bool { didSet { defaults.set(lockScreenAfterSwitch, forKey: Keys.lockScreenAfterSwitch); notifyChange() } }
+    @Published var screenLockShortcut: ScreenLockShortcut { didSet { defaults.set(screenLockShortcut.rawValue, forKey: Keys.screenLockShortcut); notifyChange() } }
+    @Published var startMinimized: Bool { didSet { defaults.set(startMinimized, forKey: Keys.startMinimized); notifyChange() } }
 
     private let defaults: UserDefaults
 
@@ -134,6 +157,8 @@ final class Preferences: ObservableObject {
         let storedScale = defaults.double(forKey: Keys.fontScale)
         fontScale = storedScale == 0 ? 1.0 : min(max(storedScale, 0.85), 1.35)
         lockScreenAfterSwitch = defaults.bool(forKey: Keys.lockScreenAfterSwitch)
+        screenLockShortcut = defaults.string(forKey: Keys.screenLockShortcut).flatMap(ScreenLockShortcut.init(rawValue:)) ?? .controlCommandQ
+        startMinimized = defaults.bool(forKey: Keys.startMinimized)
     }
 
     func isInputEnabled(_ input: PA32QCVInput) -> Bool {
@@ -191,5 +216,7 @@ final class Preferences: ObservableObject {
         static let inputCustomizations = "inputCustomizations"
         static let fontScale = "fontScale"
         static let lockScreenAfterSwitch = "lockScreenAfterSwitch"
+        static let screenLockShortcut = "screenLockShortcut"
+        static let startMinimized = "startMinimized"
     }
 }

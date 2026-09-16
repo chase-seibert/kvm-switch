@@ -17,6 +17,9 @@ Prefer the Makefile targets for common work:
 
 - `make setup` — check the local Xcode/Swift toolchain.
 - `make build` — build the macOS app with Xcode.
+- `make sign-app` — sign and verify the built app with the first available
+  local code-signing identity so macOS Accessibility permission remains tied to
+  a stable app identity.
 - `make probe-build` — compile the standalone DDC probe.
 - `make probe` — enumerate displays and read the PA32QCV when connected.
 - `make format` — run Swift formatting when available.
@@ -31,6 +34,9 @@ After any macOS app code or UI change, relaunch with `make run` so the active
 application is the same bundle used by the Dock. Do not launch
 `build/Build/Products/Debug/ProArt KVM.app` directly; that creates a separate
 app instance from the Dock-installed copy.
+
+The Makefile signs the local app after each build. If multiple certificates are
+installed, pass `SIGNING_IDENTITY="..."` to select the intended one.
 
 ## Documentation index
 

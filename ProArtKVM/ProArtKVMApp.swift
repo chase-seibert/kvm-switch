@@ -19,8 +19,11 @@ final class ProArtKVMApp: NSObject, NSApplicationDelegate {
         menuBarController.start()
     }
 
-    func applicationDidBecomeActive(_ notification: Notification) {
-        menuBarController.showMainWindow()
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if !flag {
+            menuBarController.showMainWindow()
+        }
+        return true
     }
 
     private func buildMainMenu() {
@@ -54,6 +57,15 @@ final class ProArtKVMApp: NSObject, NSApplicationDelegate {
         viewMenuItem.submenu = viewMenu
         mainMenu.addItem(viewMenuItem)
 
+        let windowMenuItem = NSMenuItem()
+        let windowMenu = NSMenu(title: "Window")
+        let closeWindow = NSMenuItem(title: "Close Window", action: #selector(closeMainWindow), keyEquivalent: "w")
+        closeWindow.keyEquivalentModifierMask = [.command]
+        closeWindow.target = self
+        windowMenu.addItem(closeWindow)
+        windowMenuItem.submenu = windowMenu
+        mainMenu.addItem(windowMenuItem)
+
         let helpItem = NSMenuItem()
         let helpMenu = NSMenu(title: "Help")
         helpMenu.addItem(withTitle: "ProArt KVM Help", action: #selector(showHelp), keyEquivalent: "?")
@@ -63,6 +75,10 @@ final class ProArtKVMApp: NSObject, NSApplicationDelegate {
     }
 
     @objc private func showPreferences() { menuBarController.showPreferences() }
+
+    @objc private func closeMainWindow() { NSApp.keyWindow?.performClose(nil) }
+
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
 
     @objc private func increaseTextSize() { Preferences.shared.fontScale = min(Preferences.shared.fontScale + 0.1, 1.35) }
     @objc private func decreaseTextSize() { Preferences.shared.fontScale = max(Preferences.shared.fontScale - 0.1, 0.85) }

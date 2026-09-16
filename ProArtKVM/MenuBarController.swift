@@ -27,7 +27,6 @@ final class MenuBarController: NSObject {
             preferences: preferences,
             loginItem: loginItem,
             switchAction: { [weak self] input in self?.performSwitch(to: input) },
-            powerAction: { [weak self] state in self?.performPower(to: state) },
             refreshAction: { [weak self] in self?.synchronize() },
             installAction: { [weak self] in self?.installCLI() },
             finishSetupAction: { [weak self] in self?.finishSetup() },
@@ -42,12 +41,17 @@ final class MenuBarController: NSObject {
 
         hotKeyController = HotKeyController { [weak self] in self?.switchToOtherMac() }
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in self?.synchronize() }
-        showMainWindow()
-        DispatchQueue.main.async { [weak self] in self?.showMainWindow() }
+        if !preferences.startMinimized {
+            showMainWindow()
+        }
     }
 
     @objc func showPreferences() {
         mainWindow.showSettings()
+    }
+
+    @objc private func openApp() {
+        showMainWindow()
     }
 
     func showMainWindow() {
@@ -91,6 +95,7 @@ final class MenuBarController: NSObject {
         statusMenuItem.isEnabled = false
         menu.addItem(statusMenuItem)
         menu.addItem(.separator())
+        menu.addItem(item("Open App", action: #selector(openApp)))
         menu.addItem(item("Settings…", action: #selector(showPreferences)))
         menu.addItem(item("Quit ProArt KVM", action: #selector(quit)))
         statusItem.menu = menu
@@ -199,7 +204,7 @@ final class MenuBarController: NSObject {
                 let target = try monitor.findPA32QCV()
                 try monitor.switchTo(input, monitor: target)
                 if lockScreenAfterSwitch {
-                    try screenLock.lock()
+                    try screenLock.lock(using: preferences.screenLockShortcut)
                 }
                 DispatchQueue.main.async { [weak self] in
                     self?.mainWindow.setBusy(false)
@@ -216,33 +221,6 @@ final class MenuBarController: NSObject {
                         self?.mainWindow.setError(error.localizedDescription)
                     }
                     self?.present(error: error)
-                }
-            }
-        }
-    }
-
-    private func performPower(to state: PA32QCVPowerState) {
-        guard cli.isInstalled else {
-            mainWindow.setError("Download the ASUS Display Control CLI before testing monitor power.")
-            showPreferences()
-            return
-        }
-        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            guard let self else { return }
-            do {
-                let target = try monitor.findPA32QCV()
-                try monitor.setPowerState(state, monitor: target)
-                DispatchQueue.main.async { [weak self] in
-                    guard let self else { return }
-                    self.mainWindow.setBusy(false)
-                    self.mainWindow.setStatus("Sent experimental \(state.title) command to the PA32QCV.")
-                }
-            } catch {
-                DispatchQueue.main.async { [weak self] in
-                    guard let self else { return }
-                    self.mainWindow.setBusy(false)
-                    self.mainWindow.setError(error.localizedDescription)
-                    self.present(error: error)
                 }
             }
         }
@@ -272,7 +250,7 @@ final class MenuBarController: NSObject {
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let self else { return }
             do {
-                try screenLock.lock()
+                try screenLock.lock(using: preferences.screenLockShortcut)
                 DispatchQueue.main.async { [weak self] in
                     self?.mainWindow.setBusy(false)
                     self?.mainWindow.setScreenLockStatus("Lock Screen command sent.")
