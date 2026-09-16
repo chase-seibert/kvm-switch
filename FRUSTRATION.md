@@ -1,5 +1,13 @@
 # Frustration log
 
+## 2026-09-15 — Dock bundle differed from the Debug bundle
+
+Launching `build/Build/Products/Debug/ProArt KVM.app` directly created a
+separate app instance because the Dock points to
+`build/Applications/ProArt KVM.app`. The `make run` target now installs the
+rebuilt bundle to the Dock path before opening it; agents should use that
+target after app changes.
+
 ## 2026-09-08 — Official ASUS CLI is the working transport
 
 The legacy IOKit-I2C route could identify the display but could not control it

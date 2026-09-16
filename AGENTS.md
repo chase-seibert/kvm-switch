@@ -22,7 +22,15 @@ Prefer the Makefile targets for common work:
 - `make format` — run Swift formatting when available.
 - `make lint` — run Swift compiler lint checks.
 - `make test` — run the project verification checks.
+- `make install-local` — copy the rebuilt app to the local installed bundle
+  used by the Dock at `build/Applications/ProArt KVM.app`.
+- `make run` — rebuild, install to that Dock bundle path, and launch it.
 - `make clean` — remove generated build output.
+
+After any macOS app code or UI change, relaunch with `make run` so the active
+application is the same bundle used by the Dock. Do not launch
+`build/Build/Products/Debug/ProArt KVM.app` directly; that creates a separate
+app instance from the Dock-installed copy.
 
 ## Documentation index
 

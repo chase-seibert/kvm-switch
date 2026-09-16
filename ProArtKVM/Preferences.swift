@@ -112,6 +112,7 @@ final class Preferences: ObservableObject {
     @Published var enabledInputs: Set<PA32QCVInput> { didSet { saveEnabledInputs(); notifyChange() } }
     @Published var inputCustomizations: [String: InputCustomization] { didSet { saveInputCustomizations(); notifyChange() } }
     @Published var fontScale: Double { didSet { defaults.set(fontScale, forKey: Keys.fontScale); notifyChange() } }
+    @Published var lockScreenAfterSwitch: Bool { didSet { defaults.set(lockScreenAfterSwitch, forKey: Keys.lockScreenAfterSwitch); notifyChange() } }
 
     private let defaults: UserDefaults
 
@@ -132,6 +133,7 @@ final class Preferences: ObservableObject {
         }
         let storedScale = defaults.double(forKey: Keys.fontScale)
         fontScale = storedScale == 0 ? 1.0 : min(max(storedScale, 0.85), 1.35)
+        lockScreenAfterSwitch = defaults.bool(forKey: Keys.lockScreenAfterSwitch)
     }
 
     func isInputEnabled(_ input: PA32QCVInput) -> Bool {
@@ -188,5 +190,6 @@ final class Preferences: ObservableObject {
         static let enabledInputs = "enabledInputs"
         static let inputCustomizations = "inputCustomizations"
         static let fontScale = "fontScale"
+        static let lockScreenAfterSwitch = "lockScreenAfterSwitch"
     }
 }

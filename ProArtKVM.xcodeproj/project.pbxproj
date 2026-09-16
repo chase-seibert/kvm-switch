@@ -13,6 +13,7 @@
 		A00000010000000000000007 /* Preferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000010000000000000007 /* Preferences.swift */; };
 		A00000010000000000000008 /* MainWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000010000000000000010 /* MainWindow.swift */; };
 		A00000010000000000000009 /* ASUSCLIManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000010000000000000012 /* ASUSCLIManager.swift */; };
+		A00000010000000000000012 /* ScreenLockManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000010000000000000014 /* ScreenLockManager.swift */; };
 		A00000010000000000000010 /* AppIcon.png in Resources */ = {isa = PBXBuildFile; fileRef = B00000010000000000000011 /* AppIcon.png */; };
 		A00000010000000000000011 /* AppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = B00000010000000000000013 /* AppIcon.icns */; };
 /* End PBXBuildFile section */
@@ -32,6 +33,7 @@
 		B00000010000000000000011 /* AppIcon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AppIcon.png; sourceTree = "<group>"; };
 		B00000010000000000000012 /* ASUSCLIManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ASUSCLIManager.swift; sourceTree = "<group>"; };
 		B00000010000000000000013 /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = AppIcon.icns; sourceTree = "<group>"; };
+		B00000010000000000000014 /* ScreenLockManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenLockManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -39,7 +41,7 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		D00000010000000000000001 = {isa = PBXGroup; children = (B00000010000000000000001,B00000010000000000000002,B00000010000000000000003,B00000010000000000000004,B00000010000000000000005,B00000010000000000000006,B00000010000000000000007,B00000010000000000000008,B00000010000000000000010,B00000010000000000000011,B00000010000000000000012,B00000010000000000000013,); name = ProArtKVM; path = ProArtKVM; sourceTree = "<group>"; };
+		D00000010000000000000001 = {isa = PBXGroup; children = (B00000010000000000000001,B00000010000000000000002,B00000010000000000000003,B00000010000000000000004,B00000010000000000000005,B00000010000000000000006,B00000010000000000000007,B00000010000000000000008,B00000010000000000000010,B00000010000000000000011,B00000010000000000000012,B00000010000000000000013,B00000010000000000000014,); name = ProArtKVM; path = ProArtKVM; sourceTree = "<group>"; };
 		D00000010000000000000002 = {isa = PBXGroup; children = (D00000010000000000000001,); name = ProArtKVM; sourceTree = "<group>"; };
 		D00000010000000000000003 = {isa = PBXGroup; children = (B00000010000000000000000,); name = Products; sourceTree = "<group>"; };
 /* End PBXGroup section */
@@ -57,7 +59,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		C00000010000000000000003 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A00000010000000000000001,A00000010000000000000002,A00000010000000000000003,A00000010000000000000006,A00000010000000000000007,A00000010000000000000008,A00000010000000000000009,); runOnlyForDeploymentPostprocessing = 0; };
+		C00000010000000000000003 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A00000010000000000000001,A00000010000000000000002,A00000010000000000000003,A00000010000000000000006,A00000010000000000000007,A00000010000000000000008,A00000010000000000000009,A00000010000000000000012,); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */

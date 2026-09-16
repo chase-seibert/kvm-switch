@@ -4,6 +4,7 @@ CONFIGURATION := Debug
 DERIVED_DATA := build
 APP_NAME := ProArtKVM
 APP_PATH := $(DERIVED_DATA)/Build/Products/$(CONFIGURATION)/ProArt KVM.app
+INSTALLED_APP_PATH := $(DERIVED_DATA)/Applications/ProArt KVM.app
 PROBE_PATH := $(DERIVED_DATA)/ddc-probe
 
 .PHONY: setup build probe-build probe run probe-run format lint test install-local clean
@@ -23,8 +24,8 @@ probe-build:
 probe: probe-build
 	$(PROBE_PATH)
 
-run: build
-	open "$(APP_PATH)"
+run: install-local
+	open "$(INSTALLED_APP_PATH)"
 
 probe-run: probe
 

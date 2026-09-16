@@ -31,5 +31,10 @@ by macOS Login Items. The app uses
 system colors, controls, spacing, and SF Symbols so it follows light/dark
 appearance without custom chrome.
 
+Settings also includes an opt-in control to lock the Mac after a successful
+input switch. When enabled, the app uses the same system Lock Screen action as
+the Apple menu (or its Control-Command-Q shortcut on newer macOS), so switches
+from the window, status menu, and global hotkey all have the same behavior.
+
 The app shows a small native user notification for missing hardware, CLI
 failures, and failed switching. No remote wake behavior is attempted.

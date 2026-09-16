@@ -10,9 +10,14 @@
   Thunderbolt, DisplayPort, and HDMI options. It also exposes experimental
   raw VCP power commands for Settings-only hardware validation.
 - `Preferences` persists onboarding completion, the Mac's connection role,
-  enabled inputs, per-input names/icons, and display text scale in `UserDefaults`.
+  enabled inputs, per-input names/icons, display text scale, and the optional
+  post-switch screen lock in `UserDefaults`.
 - `LoginItemManager` registers or unregisters the main app with Apple's
   `SMAppService` and reads the system status back for the Settings toggle.
+- `ScreenLockManager` invokes the system helper used by Apple's Lock Screen
+  menu action, falling back to its Control-Command-Q shortcut on newer macOS
+  versions, when the opt-in post-switch setting is enabled. It also exposes
+  Accessibility permission request/settings actions for Settings diagnostics.
 - `MenuBarController` owns the `NSStatusItem`, menu commands, asynchronous
   switching, status/error notifications, and initial synchronization read.
 - `HotKeyController` registers Control-Option-Command-K with Carbon's native
@@ -29,6 +34,7 @@ menu, window, or global hotkey
         ↓
 PA32QCVController → `dwc list` / `get InputSource` / `set InputSource`
                   → experimental `setvcp 0xD6` power commands
+                  → optional macOS Lock Screen action
         ↓
 monitor input and PA32QCV KVM upstream selection
 ```

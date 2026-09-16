@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-15
+
+- Added an opt-in Settings option to lock the Mac after a successful KVM input
+  switch using macOS's native Lock Screen command.
+- Added nearby permission controls, localized screen-lock errors, and a
+  Settings test button for verifying the Lock Screen action.
+
 ## 2026-09-08
 
 - Replaced the in-window tab view with a single switcher view and a separate

@@ -31,3 +31,6 @@
   with Command-Comma, rather than mixed into the switching view.
 - As a Mac user, I want an optional Start at Login setting, so ProArt KVM is
   available automatically after I sign in.
+- As a privacy-conscious Mac user, I want an optional setting to lock the screen
+  after switching KVM inputs, so moving to another Mac also protects the screen
+  I am leaving.

@@ -27,6 +27,8 @@ final class MainWindowModel: ObservableObject {
     @Published var installationMessage: String?
     @Published var statusMessage: String?
     @Published var errorMessage: String?
+    @Published var screenLockStatusMessage: String?
+    @Published var screenLockErrorMessage: String?
 }
 
 final class MainWindowController {
@@ -42,6 +44,9 @@ final class MainWindowController {
     private let refreshAction: () -> Void
     private let installAction: () -> Void
     private let finishSetupAction: () -> Void
+    private let requestScreenLockPermissionAction: () -> Void
+    private let openScreenLockSettingsAction: () -> Void
+    private let testScreenLockAction: () -> Void
     private var windowController: NSWindowController?
     private var settingsWindowController: NSWindowController?
 
@@ -52,7 +57,10 @@ final class MainWindowController {
         powerAction: @escaping (PA32QCVPowerState) -> Void,
         refreshAction: @escaping () -> Void,
         installAction: @escaping () -> Void,
-        finishSetupAction: @escaping () -> Void
+        finishSetupAction: @escaping () -> Void,
+        requestScreenLockPermissionAction: @escaping () -> Void,
+        openScreenLockSettingsAction: @escaping () -> Void,
+        testScreenLockAction: @escaping () -> Void
     ) {
         self.preferences = preferences
         self.loginItem = loginItem
@@ -61,6 +69,9 @@ final class MainWindowController {
         self.refreshAction = refreshAction
         self.installAction = installAction
         self.finishSetupAction = finishSetupAction
+        self.requestScreenLockPermissionAction = requestScreenLockPermissionAction
+        self.openScreenLockSettingsAction = openScreenLockSettingsAction
+        self.testScreenLockAction = testScreenLockAction
     }
 
     func show() {
@@ -110,7 +121,10 @@ final class MainWindowController {
                 refreshAction: { [weak self] in self?.refreshAction() },
                 installAction: { [weak self] in self?.installAction() },
                 switchAction: { [weak self] input in self?.switchTo(input) },
-                powerAction: { [weak self] state in self?.powerTo(state) }
+                powerAction: { [weak self] state in self?.powerTo(state) },
+                requestScreenLockPermissionAction: { [weak self] in self?.requestScreenLockPermissionAction() },
+                openScreenLockSettingsAction: { [weak self] in self?.openScreenLockSettingsAction() },
+                testScreenLockAction: { [weak self] in self?.testScreenLockAction() }
             )
             let hostingController = NSHostingController(
                 rootView: view.frame(minWidth: minimumSettingsContentSize.width, minHeight: minimumSettingsContentSize.height, alignment: .topLeading)
@@ -179,9 +193,19 @@ final class MainWindowController {
         DispatchQueue.main.async { [weak self] in self?.model.statusMessage = message }
     }
 
+    func setScreenLockStatus(_ message: String?) {
+        DispatchQueue.main.async { [weak self] in self?.model.screenLockStatusMessage = message }
+    }
+
+    func setScreenLockError(_ message: String?) {
+        DispatchQueue.main.async { [weak self] in self?.model.screenLockErrorMessage = message }
+    }
+
     private func switchTo(_ input: PA32QCVInput) {
         model.errorMessage = nil
         model.statusMessage = nil
+        model.screenLockStatusMessage = nil
+        model.screenLockErrorMessage = nil
         model.isBusy = true
         switchAction(input)
     }
@@ -464,6 +488,9 @@ private struct HardwareSettingsView: View {
     let installAction: () -> Void
     let switchAction: (PA32QCVInput) -> Void
     let powerAction: (PA32QCVPowerState) -> Void
+    let requestScreenLockPermissionAction: () -> Void
+    let openScreenLockSettingsAction: () -> Void
+    let testScreenLockAction: () -> Void
 
     var body: some View {
         ScrollView {
@@ -486,6 +513,29 @@ private struct HardwareSettingsView: View {
                             get: { loginItem.isEnabled },
                             set: { loginItem.setEnabled($0) }
                         ))
+                        Toggle("Lock the screen after switching inputs", isOn: $preferences.lockScreenAfterSwitch)
+                        Text("After a successful switch, ProArt KVM uses macOS's Lock Screen command (Control-Command-Q). Newer macOS versions may require Accessibility permission.")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        HStack(spacing: 10) {
+                            Button("Request Permission", action: requestScreenLockPermissionAction)
+                            Button("Open Accessibility Settings", action: openScreenLockSettingsAction)
+                        }
+                        Button("Test Lock Screen", action: testScreenLockAction)
+                            .disabled(model.isBusy)
+                        if let message = model.screenLockStatusMessage {
+                            Text(message)
+                                .font(.callout)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        if let errorMessage = model.screenLockErrorMessage {
+                            Text(errorMessage)
+                                .font(.callout)
+                                .foregroundStyle(.red)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
                         Text(loginItem.statusDescription)
                             .font(.callout)
                             .foregroundStyle(loginItem.requiresApproval ? .orange : .secondary)

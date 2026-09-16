@@ -6,6 +6,7 @@ final class MenuBarController: NSObject {
     private let loginItem = LoginItemManager()
     private let cli = ASUSCLIManager.shared
     private let monitor = PA32QCVController()
+    private let screenLock = ScreenLockManager.shared
     private var mainWindow: MainWindowController!
     private var statusItem: NSStatusItem!
     private var hotKeyController: HotKeyController!
@@ -29,7 +30,10 @@ final class MenuBarController: NSObject {
             powerAction: { [weak self] state in self?.performPower(to: state) },
             refreshAction: { [weak self] in self?.synchronize() },
             installAction: { [weak self] in self?.installCLI() },
-            finishSetupAction: { [weak self] in self?.finishSetup() }
+            finishSetupAction: { [weak self] in self?.finishSetup() },
+            requestScreenLockPermissionAction: { [weak self] in self?.requestScreenLockPermission() },
+            openScreenLockSettingsAction: { [weak self] in self?.openScreenLockSettings() },
+            testScreenLockAction: { [weak self] in self?.testScreenLock() }
         )
 
         NotificationCenter.default.addObserver(forName: .proArtKVMPreferencesChanged, object: preferences, queue: .main) { [weak self] _ in
@@ -187,12 +191,16 @@ final class MenuBarController: NSObject {
             showPreferences()
             return
         }
+        let lockScreenAfterSwitch = preferences.lockScreenAfterSwitch
         mainWindow.setBusy(true)
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let self else { return }
             do {
                 let target = try monitor.findPA32QCV()
                 try monitor.switchTo(input, monitor: target)
+                if lockScreenAfterSwitch {
+                    try screenLock.lock()
+                }
                 DispatchQueue.main.async { [weak self] in
                     self?.mainWindow.setBusy(false)
                     self?.isConnected = true
@@ -202,7 +210,11 @@ final class MenuBarController: NSObject {
             } catch {
                 DispatchQueue.main.async { [weak self] in
                     self?.mainWindow.setBusy(false)
-                    self?.mainWindow.setError(error.localizedDescription)
+                    if let screenLockError = error as? ScreenLockError {
+                        self?.mainWindow.setScreenLockError(screenLockError.localizedDescription)
+                    } else {
+                        self?.mainWindow.setError(error.localizedDescription)
+                    }
                     self?.present(error: error)
                 }
             }
@@ -231,6 +243,45 @@ final class MenuBarController: NSObject {
                     self.mainWindow.setBusy(false)
                     self.mainWindow.setError(error.localizedDescription)
                     self.present(error: error)
+                }
+            }
+        }
+    }
+
+    private func requestScreenLockPermission() {
+        mainWindow.setScreenLockStatus(nil)
+        mainWindow.setScreenLockError(nil)
+        if screenLock.requestAccessibilityPermission() {
+            mainWindow.setScreenLockStatus("Accessibility permission is available. Test Lock Screen to verify it.")
+        } else {
+            mainWindow.setScreenLockError("Allow ProArt KVM in System Settings › Privacy & Security › Accessibility, then test Lock Screen.")
+        }
+    }
+
+    private func openScreenLockSettings() {
+        mainWindow.setScreenLockStatus(nil)
+        if !screenLock.openAccessibilitySettings() {
+            mainWindow.setScreenLockError("Could not open Accessibility settings. Open System Settings › Privacy & Security › Accessibility manually.")
+        }
+    }
+
+    private func testScreenLock() {
+        mainWindow.setScreenLockStatus(nil)
+        mainWindow.setScreenLockError(nil)
+        mainWindow.setBusy(true)
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let self else { return }
+            do {
+                try screenLock.lock()
+                DispatchQueue.main.async { [weak self] in
+                    self?.mainWindow.setBusy(false)
+                    self?.mainWindow.setScreenLockStatus("Lock Screen command sent.")
+                }
+            } catch {
+                DispatchQueue.main.async { [weak self] in
+                    self?.mainWindow.setBusy(false)
+                    self?.mainWindow.setScreenLockError(error.localizedDescription)
+                    self?.present(error: error)
                 }
             }
         }
