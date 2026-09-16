@@ -24,6 +24,9 @@
   same direct input-selection operation proven by the ASUS CLI.
 - As a user, I want to hide unused input sources such as HDMI 1, so the
   switcher and menus show only the controls I use.
+- As a hardware tester, I want experimental monitor power-on and power-off
+  buttons in Settings, so I can validate the PA32QCV's raw VCP power behavior
+  before adding it to the main UI or a schedule.
 - As a Mac user, I want hardware settings in a dedicated Settings window opened
   with Command-Comma, rather than mixed into the switching view.
 - As a Mac user, I want an optional Start at Login setting, so ProArt KVM is

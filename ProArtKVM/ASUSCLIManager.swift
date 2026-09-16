@@ -163,6 +163,16 @@ final class ASUSCLIManager {
         _ = try runSynchronously(arguments: ["set", "InputSource", String(value), "--id", String(monitor.id)])
     }
 
+    func setVCPValue(_ value: UInt16, code: UInt8, for monitor: ASUSMonitor) throws {
+        _ = try runSynchronously(arguments: [
+            "setvcp",
+            String(format: "0x%02X", code),
+            String(value),
+            "--id",
+            String(monitor.id)
+        ])
+    }
+
     func listMonitorsAsync() async throws -> [ASUSMonitor] {
         try await runOffMain { try self.listMonitors() }
     }

@@ -25,6 +25,7 @@ final class MainWindowModel: ObservableObject {
     @Published var isBusy = false
     @Published var isInstalling = false
     @Published var installationMessage: String?
+    @Published var statusMessage: String?
     @Published var errorMessage: String?
 }
 
@@ -37,6 +38,7 @@ final class MainWindowController {
     private let preferences: Preferences
     private let loginItem: LoginItemManager
     private let switchAction: (PA32QCVInput) -> Void
+    private let powerAction: (PA32QCVPowerState) -> Void
     private let refreshAction: () -> Void
     private let installAction: () -> Void
     private let finishSetupAction: () -> Void
@@ -47,6 +49,7 @@ final class MainWindowController {
         preferences: Preferences = .shared,
         loginItem: LoginItemManager = LoginItemManager(),
         switchAction: @escaping (PA32QCVInput) -> Void,
+        powerAction: @escaping (PA32QCVPowerState) -> Void,
         refreshAction: @escaping () -> Void,
         installAction: @escaping () -> Void,
         finishSetupAction: @escaping () -> Void
@@ -54,6 +57,7 @@ final class MainWindowController {
         self.preferences = preferences
         self.loginItem = loginItem
         self.switchAction = switchAction
+        self.powerAction = powerAction
         self.refreshAction = refreshAction
         self.installAction = installAction
         self.finishSetupAction = finishSetupAction
@@ -105,7 +109,8 @@ final class MainWindowController {
                 loginItem: loginItem,
                 refreshAction: { [weak self] in self?.refreshAction() },
                 installAction: { [weak self] in self?.installAction() },
-                switchAction: { [weak self] input in self?.switchTo(input) }
+                switchAction: { [weak self] input in self?.switchTo(input) },
+                powerAction: { [weak self] state in self?.powerTo(state) }
             )
             let hostingController = NSHostingController(
                 rootView: view.frame(minWidth: minimumSettingsContentSize.width, minHeight: minimumSettingsContentSize.height, alignment: .topLeading)
@@ -170,10 +175,22 @@ final class MainWindowController {
         DispatchQueue.main.async { [weak self] in self?.model.errorMessage = message }
     }
 
+    func setStatus(_ message: String?) {
+        DispatchQueue.main.async { [weak self] in self?.model.statusMessage = message }
+    }
+
     private func switchTo(_ input: PA32QCVInput) {
         model.errorMessage = nil
+        model.statusMessage = nil
         model.isBusy = true
         switchAction(input)
+    }
+
+    private func powerTo(_ state: PA32QCVPowerState) {
+        model.errorMessage = nil
+        model.statusMessage = nil
+        model.isBusy = true
+        powerAction(state)
     }
 }
 
@@ -446,6 +463,7 @@ private struct HardwareSettingsView: View {
     let refreshAction: () -> Void
     let installAction: () -> Void
     let switchAction: (PA32QCVInput) -> Void
+    let powerAction: (PA32QCVPowerState) -> Void
 
     var body: some View {
         ScrollView {
@@ -513,6 +531,37 @@ private struct HardwareSettingsView: View {
                                 .font(.callout)
                                 .foregroundStyle(.secondary)
                         }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 4)
+                }
+
+                GroupBox("Experimental monitor power") {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Send raw VCP 0xD6 commands to the verified PA32QCV. Power off uses the monitor's standby value; it is not a hard power cut.")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        HStack(spacing: 10) {
+                            Button("Power off / standby") { powerAction(.off) }
+                            Button("Power on") { powerAction(.on) }
+                        }
+                        .disabled(!model.hardware.isReady || model.isBusy)
+                        if let statusMessage = model.statusMessage {
+                            Text(statusMessage)
+                                .font(.callout)
+                                .foregroundStyle(.secondary)
+                        }
+                        if let errorMessage = model.errorMessage {
+                            Text(errorMessage)
+                                .font(.callout)
+                                .foregroundStyle(.red)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        Text("Experimental values: 0x01 = on, 0x04 = off. Test whether the monitor accepts the on command after standby.")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.vertical, 4)

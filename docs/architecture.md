@@ -7,7 +7,8 @@
   it with argument arrays, and parses monitor discovery and input values.
 - `PA32QCVController` is the narrow monitor-specific facade. It selects only a
   discovered PA32QCV and maps the documented `InputSource` IDs to friendly
-  Thunderbolt, DisplayPort, and HDMI options.
+  Thunderbolt, DisplayPort, and HDMI options. It also exposes experimental
+  raw VCP power commands for Settings-only hardware validation.
 - `Preferences` persists onboarding completion, the Mac's connection role,
   enabled inputs, per-input names/icons, and display text scale in `UserDefaults`.
 - `LoginItemManager` registers or unregisters the main app with Apple's
@@ -27,6 +28,7 @@ managed ASUS `dwc` download
 menu, window, or global hotkey
         ↓
 PA32QCVController → `dwc list` / `get InputSource` / `set InputSource`
+                  → experimental `setvcp 0xD6` power commands
         ↓
 monitor input and PA32QCV KVM upstream selection
 ```
@@ -45,6 +47,9 @@ Both Macs run their own copy of the app and their own local preferences.
   in Settings so discovery is inspectable rather than opaque.
 - The app uses ASUS's documented PA32QCV IDs: Thunderbolt `21`, DisplayPort
   `15`, and HDMI `17`.
+- Settings exposes experimental PA32QCV VCP `0xD6` power buttons using `0x01`
+  for on and `0x04` for off/standby. These controls are intentionally not in
+  the main UI until the hardware behavior is validated.
 - The old `DDCController` and `DisplayDiscovery` sources remain only as
   historical reference; they are no longer part of the app target. The
   standalone `Tools/ddc-probe.swift` remains the diagnostic implementation.
