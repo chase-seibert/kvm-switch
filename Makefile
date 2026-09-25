@@ -6,7 +6,9 @@ APP_NAME := ProArtKVM
 APP_PATH := $(DERIVED_DATA)/Build/Products/$(CONFIGURATION)/ProArt KVM.app
 INSTALLED_APP_PATH := $(DERIVED_DATA)/Applications/ProArt KVM.app
 PROBE_PATH := $(DERIVED_DATA)/ddc-probe
-SIGNING_IDENTITY ?= $(shell security find-identity -v -p codesigning 2>/dev/null | awk -F '"' 'NR == 1 {print $$2}')
+DEVELOPMENT_TEAM ?= 96NAC4VTEN
+SIGNING_IDENTITY ?= $(shell security find-identity -v -p codesigning 2>/dev/null | awk -F '"' '/Apple Development/ {print $$2; exit}')
+SIGNING_MODE ?= team
 
 .PHONY: setup build sign-app probe-build probe run probe-run format lint test install-local clean
 
@@ -20,9 +22,18 @@ build:
 	$(MAKE) sign-app
 
 sign-app:
-	@if [ -z "$(SIGNING_IDENTITY)" ]; then echo "No code-signing identity found. Install an Apple Development certificate or pass SIGNING_IDENTITY=..." >&2; exit 1; fi
-	codesign --force --deep --sign "$(SIGNING_IDENTITY)" "$(APP_PATH)"
-	codesign --verify --deep --strict "$(APP_PATH)"
+	@set -eu; \
+	case "$(SIGNING_MODE)" in \
+	  team) identity="$(SIGNING_IDENTITY)"; expected_team="$(DEVELOPMENT_TEAM)"; \
+	    if [ -z "$$identity" ]; then echo "No Apple Development signing identity found for team $(DEVELOPMENT_TEAM)." >&2; exit 1; fi ;; \
+	  adhoc) identity=-; expected_team= ;; \
+	  unsigned) echo "Skipping code signing (SIGNING_MODE=unsigned)."; exit 0 ;; \
+	  *) echo "Unsupported SIGNING_MODE=$(SIGNING_MODE); use team, adhoc, or unsigned." >&2; exit 2 ;; \
+	esac; \
+	codesign --force --deep --sign "$$identity" "$(APP_PATH)"; \
+	codesign --verify --deep --strict "$(APP_PATH)"; \
+	if [ -n "$$expected_team" ]; then actual_team=$$(codesign -dvvv "$(APP_PATH)" 2>&1 | awk -F= '/^TeamIdentifier=/{print $$2}'); \
+	if [ "$$actual_team" != "$$expected_team" ]; then echo "Expected TeamIdentifier=$$expected_team, got $${actual_team:-none}." >&2; exit 1; fi; fi
 
 probe-build:
 	mkdir -p $(DERIVED_DATA)

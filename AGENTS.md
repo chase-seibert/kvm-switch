@@ -17,9 +17,10 @@ Prefer the Makefile targets for common work:
 
 - `make setup` — check the local Xcode/Swift toolchain.
 - `make build` — build the macOS app with Xcode.
-- `make sign-app` — sign and verify the built app with the first available
-  local code-signing identity so macOS Accessibility permission remains tied to
-  a stable app identity.
+- `make sign-app` — sign and verify the built app with the team-backed Apple
+  Development identity so macOS Accessibility permission remains tied to a
+  stable app identity. The default is `SIGNING_MODE=team`; public contributors
+  can use `SIGNING_MODE=adhoc` or `SIGNING_MODE=unsigned` for local testing.
 - `make probe-build` — compile the standalone DDC probe.
 - `make probe` — enumerate displays and read the PA32QCV when connected.
 - `make format` — run Swift formatting when available.
@@ -36,7 +37,9 @@ application is the same bundle used by the Dock. Do not launch
 app instance from the Dock-installed copy.
 
 The Makefile signs the local app after each build. If multiple certificates are
-installed, pass `SIGNING_IDENTITY="..."` to select the intended one.
+installed, pass `SIGNING_IDENTITY="..."` to select the intended one. A
+different team can override `DEVELOPMENT_TEAM=...`; no repository edits are
+needed for that override.
 
 ## Documentation index
 
